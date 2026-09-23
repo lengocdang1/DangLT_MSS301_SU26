@@ -31,5 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
-
-.github/
+target/
+.idea/
+*.iml
+.env
+docker/mysql/data/
