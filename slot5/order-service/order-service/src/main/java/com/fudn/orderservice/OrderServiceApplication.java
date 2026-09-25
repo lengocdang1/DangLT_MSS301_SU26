@@ -1,4 +1,4 @@
-package order_service;
+package com.fudn.orderservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
