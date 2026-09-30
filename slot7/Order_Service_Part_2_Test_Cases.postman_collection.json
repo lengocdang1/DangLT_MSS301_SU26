@@ -1,0 +1,103 @@
+{
+	"info": {
+		"_postman_id": "a8f34291-7d1a-4d2b-9876-123456789abc",
+		"name": "Order Service - Part 2 Test Cases",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 - Check Inventory - 100 in stock",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{inventory_url}}/api/inventory?skuCode=iphone_15&quantity=100",
+					"host": [
+						"{{inventory_url}}"
+					],
+					"path": [
+						"api",
+						"inventory"
+					],
+					"query": [
+						{
+							"key": "skuCode",
+							"value": "iphone_15"
+						},
+						{
+							"key": "quantity",
+							"value": "100"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 - Test Case 1 - Valid Order (quantity 100)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"skuCode\": \"iphone_15\",\n  \"price\": 1000,\n  \"quantity\": 100\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{order_url}}/api/order",
+					"host": [
+						"{{order_url}}"
+					],
+					"path": [
+						"api",
+						"order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - Test Case 2 - Order Exceeds Stock (quantity 101)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"skuCode\": \"iphone_15\",\n  \"price\": 1000,\n  \"quantity\": 101\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{order_url}}/api/order",
+					"host": [
+						"{{order_url}}"
+					],
+					"path": [
+						"api",
+						"order"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
