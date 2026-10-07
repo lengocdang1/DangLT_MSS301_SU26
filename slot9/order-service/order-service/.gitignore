@@ -31,6 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### Docker volumes ###
-volume-data/
+target/
+.idea/
+*.iml
+.env
+docker/mysql/data/
