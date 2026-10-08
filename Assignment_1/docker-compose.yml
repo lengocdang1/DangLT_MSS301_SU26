@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
-  # 1. SQL Server for customer-service (cinema_customer)
-  cinema-sqlserver:
+  # ---------- SQL Server: customer-service ----------
+  sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: cinema-sqlserver
     ports:
@@ -10,23 +8,30 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "Fucinema@2026"
-    restart: always
+      MSSQL_PID: "Developer"
+    volumes:
+      - sqlserver-data:/var/opt/mssql          # named volume (bind mount tren Windows hay loi quyen)
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
-  cinema-sqlserver-init:
+  # Chay 1 lan sau khi SQL Server san sang: tao database cinema_customer
+  sqlserver-init:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: cinema-sqlserver-init
     depends_on:
-      - cinema-sqlserver
-    entrypoint: >
-      /bin/bash -c "
-      sleep 15 &&
-      /opt/mssql-tools18/bin/sqlcmd -S cinema-sqlserver -U sa -P 'Fucinema@2026' -C -i /init.sql
-      "
+      sqlserver:
+        condition: service_healthy
     volumes:
-      - ./sqlserver/init.sql:/init.sql
+      - ./sqlserver/init.sql:/init.sql:ro
+    entrypoint: ["/opt/mssql-tools18/bin/sqlcmd", "-S", "sqlserver", "-U", "sa", "-P", "Fucinema@2026", "-C", "-i", "/init.sql"]
+    restart: "no"
 
-  # 2. MongoDB for movie-service (cinema_movie)
-  cinema-mongo:
+  # ---------- MongoDB: movie-service ----------
+  mongo:
     image: mongo:7.0.5
     container_name: cinema-mongo
     ports:
@@ -34,18 +39,20 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: cinema_movie
-    restart: always
+    volumes:
+      - ./docker/mongodb/data:/data/db
 
-  # 3. MySQL for booking-service (cinema_booking)
-  cinema-mysql:
+  # ---------- MySQL: booking-service ----------
+  mysql:
     image: mysql:8.3.0
     container_name: cinema-mysql
     ports:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: mysql
-      MYSQL_DATABASE: cinema_booking
     volumes:
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: always
+      - ./docker/mysql/data:/var/lib/mysql
+
+volumes:
+  sqlserver-data:
