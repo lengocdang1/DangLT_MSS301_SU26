@@ -6,37 +6,42 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Map;
+import java.time.temporal.ChronoUnit;
 
+/** Ky JWT HS256. Gateway dung CUNG secret de verify. */
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret}")
-    private String secret;
+    private final JwtEncoder jwtEncoder;
+    private final long expirationMinutes;
 
-    @Value("${app.jwt.expiration-minutes:60}")
-    private long expirationMinutes;
+    public JwtService(@Value("${app.jwt.secret}") String secret,
+                      @Value("${app.jwt.expiration-minutes}") long expirationMinutes) {
+        SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        this.jwtEncoder = new NimbusJwtEncoder(new ImmutableSecret<>(key));
+        this.expirationMinutes = expirationMinutes;
+    }
 
-    public String generateToken(long userId, String email, String role) {
-        byte[] keyBytes = secret.getBytes();
-        SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
-
-        NimbusJwtEncoder encoder = new NimbusJwtEncoder(new ImmutableSecret<>(secretKey));
-
+    // TODO 1.3
+    public String generateToken(Long userId, String email, String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(email)
-                .issuedAt(now)
-                .expiresAt(now.plusSeconds(expirationMinutes * 60))
-                .claims(c -> c.putAll(Map.of(
-                        "uid", userId,
-                        "role", role
-                )))
+                .issuer("fu-cinema")
+                .subject(email)                                   // sub
+                .issuedAt(now)                                    // iat
+                .expiresAt(now.plus(expirationMinutes, ChronoUnit.MINUTES)) // exp
+                .claim("uid", userId)
+                .claim("role", role)
                 .build();
-
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
-        return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    public long getExpirationSeconds() {
+        return expirationMinutes * 60;
     }
 }
