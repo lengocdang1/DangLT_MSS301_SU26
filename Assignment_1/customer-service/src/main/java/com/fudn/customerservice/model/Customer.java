@@ -3,10 +3,10 @@ package com.fudn.customerservice.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "customers")
+@Table(name = "customer")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,29 +16,29 @@ public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "customer_id")
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "customer_name", nullable = false, length = 100)
     private String fullName;
 
+    @Column(name = "telephone", length = 15)
     private String phone;
 
-    @Column(nullable = false)
-    private String role;
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
+    @Column(name = "customer_birthday")
+    private LocalDate birthday;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "customer_status", nullable = false, length = 20)
     private CustomerStatus status;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(nullable = false, length = 100)
+    private String password;
 
-    @Column(name = "updated_at", insertable = false, updatable = false)
-    private LocalDateTime updatedAt;
+    public String getRole() {
+        return "CUSTOMER";
+    }
 }
