@@ -1,0 +1,26 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: customer-service-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**, /api/customers/**, /api/admin/customers/**
+
+        - id: movie-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/genres/**, /api/rooms/**, /api/movies/**, /api/showtimes/**
+
+        - id: booking-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/bookings/**
+
+jwt:
+  secret: 9a4f2c8d7e1b5a3f6c9d2e8a7b4c1e6f9a2b5c8d1e4f7a0b3c6d9e2f5a8b1c4d

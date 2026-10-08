@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 1. SQL Server for customer-service (cinema_customer)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourPassword123!"
+    restart: always
+
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-init
+    depends_on:
+      - sqlserver
+    entrypoint: >
+      /bin/bash -c "
+      sleep 15 &&
+      /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -C -i /init.sql
+      "
+    volumes:
+      - ./sqlserver/init.sql:/init.sql
+
+  # 2. MongoDB for movie-service (cinema_movie)
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: cinema_movie
+    restart: always
+
+  # 3. MySQL for booking-service (cinema_booking)
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cinema_booking
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
