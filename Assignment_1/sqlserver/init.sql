@@ -1,5 +1,3 @@
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'cinema_customer')
-BEGIN
+IF DB_ID(N'cinema_customer') IS NULL
     CREATE DATABASE cinema_customer;
-END
 GO
