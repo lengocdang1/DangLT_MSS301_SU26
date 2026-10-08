@@ -1,7 +1,11 @@
 package com.fudn.customerservice.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -16,27 +20,57 @@ public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "customer_id")
-    private Long id;
+    private Long customerId;
 
-    @Column(name = "customer_name", nullable = false, length = 100)
-    private String fullName;
+    @Column(nullable = false, length = 100)
+    private String customerName;
 
-    @Column(name = "telephone", length = 15)
-    private String phone;
+    private String telephone;
 
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(name = "customer_birthday")
-    private LocalDate birthday;
+    private LocalDate customerBirthday;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "customer_status", nullable = false, length = 20)
-    private CustomerStatus status;
+    @Column(nullable = false, length = 20)
+    private CustomerStatus customerStatus;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String password;
+
+    // Helper aliases for DTO and service compatibility
+    public Long getId() {
+        return customerId;
+    }
+
+    public void setId(Long id) {
+        this.customerId = id;
+    }
+
+    public String getFullName() {
+        return customerName;
+    }
+
+    public void setFullName(String fullName) {
+        this.customerName = fullName;
+    }
+
+    public String getPhone() {
+        return telephone;
+    }
+
+    public void setPhone(String phone) {
+        this.telephone = phone;
+    }
+
+    public CustomerStatus getStatus() {
+        return customerStatus;
+    }
+
+    public void setStatus(CustomerStatus status) {
+        this.customerStatus = status;
+    }
 
     public String getRole() {
         return "CUSTOMER";
