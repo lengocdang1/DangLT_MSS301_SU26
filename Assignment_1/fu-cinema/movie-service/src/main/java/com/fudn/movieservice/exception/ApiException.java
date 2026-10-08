@@ -1,4 +1,4 @@
-package com.fudn.customerservice.exception;
+package com.fudn.movieservice.exception;
 
 import org.springframework.http.HttpStatus;
 

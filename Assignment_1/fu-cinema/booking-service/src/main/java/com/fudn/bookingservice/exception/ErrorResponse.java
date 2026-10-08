@@ -1,4 +1,4 @@
-package com.fudn.customerservice.exception;
+package com.fudn.bookingservice.exception;
 
 import org.springframework.http.HttpStatus;
 
