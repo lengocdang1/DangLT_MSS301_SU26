@@ -10,3 +10,4 @@ public record ErrorResponse(LocalDateTime timestamp, int status, String error, S
         return new ErrorResponse(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, path);
     }
 }
+

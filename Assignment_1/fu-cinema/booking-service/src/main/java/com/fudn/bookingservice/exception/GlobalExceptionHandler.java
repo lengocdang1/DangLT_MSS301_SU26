@@ -70,3 +70,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(ErrorResponse.of(status, message, request.getRequestURI()));
     }
 }
+
