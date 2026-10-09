@@ -1,4 +1,3 @@
-﻿package com.fudn.bookingservice.model;
+package com.fudn.bookingservice.model;
 
-public enum BookingStatus {
-}
+public enum BookingStatus { CONFIRMED, CANCELLED }
