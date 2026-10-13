@@ -23,4 +23,12 @@ spring:
             - Path=/api/bookings/**
 
 jwt:
-  secret: 9a4f2c8d7e1b5a3f6c9d2e8a7b4c1e6f9a2b5c8d1e4f7a0b3c6d9e2f5a8b1c4d
+  secret: fu-cinema-booking-system-secret-key-2026-mss301
+
+services:
+  customer:
+    url: http://localhost:8081
+  movie:
+    url: http://localhost:8082
+  booking:
+    url: http://localhost:8083

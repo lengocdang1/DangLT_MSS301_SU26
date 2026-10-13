@@ -1,0 +1,686 @@
+{
+  "info": {
+    "_postman_id": "fucinema-booking-system-2026",
+    "name": "FUCinemaBookingSystem",
+    "description": "FU Cinema Booking System – full API test collection.\nEnvironment: FUCinema-Local\nGateway: http://localhost:9000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response time < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01-Auth",
+      "item": [
+        {
+          "name": "1.1 Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Role is ADMIN', () => pm.expect(json.role).to.eql('ADMIN'));",
+                  "pm.test('Has Bearer token', () => {",
+                  "    pm.expect(json.tokenType).to.eql('Bearer');",
+                  "    pm.expect(json.accessToken.split('.')).to.have.lengthOf(3);",
+                  "});",
+                  "pm.environment.set('adminToken', json.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fucinema.com\",\n  \"password\": \"@@abc123@@\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "1.2 Login Customer (an@gmail.com)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Role is CUSTOMER', () => pm.expect(json.role).to.eql('CUSTOMER'));",
+                  "pm.test('userId = 1', () => pm.expect(json.userId).to.eql(1));",
+                  "pm.environment.set('customerToken', json.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"an@gmail.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "1.3 Login – sai mật khẩu → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "const err = pm.response.json();",
+                  "pm.test('Error body format', () => {",
+                  "    pm.expect(err).to.have.all.keys('timestamp', 'status', 'error', 'message', 'path');",
+                  "    pm.expect(err.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"an@gmail.com\",\n  \"password\": \"sai-mat-khau\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "1.4 Login – tài khoản INACTIVE → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "const err = pm.response.json();",
+                  "pm.test('Error body format', () => {",
+                  "    pm.expect(err).to.have.all.keys('timestamp', 'status', 'error', 'message', 'path');",
+                  "    pm.expect(err.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"chi@gmail.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "1.5 Login – validation error → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const err = pm.response.json();",
+                  "pm.test('Error body format', () => {",
+                  "    pm.expect(err).to.have.all.keys('timestamp', 'status', 'error', 'message', 'path');",
+                  "    pm.expect(err.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"abc\",\n  \"password\": \"\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "1.6 GET /customers/me – không token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers/me", "host": ["{{gateway}}"], "path": ["api", "customers", "me"] }
+          }
+        },
+        {
+          "name": "1.7 GET /customers/me – token sai → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer abc.def.ghi" }],
+            "url": { "raw": "{{gateway}}/api/customers/me", "host": ["{{gateway}}"], "path": ["api", "customers", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02-Customer",
+      "item": [
+        {
+          "name": "2.1 Register new customer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('newEmail', `user${Date.now()}@gmail.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Status ACTIVE', () => pm.expect(json.customerStatus).to.eql('ACTIVE'));",
+                  "pm.test('Password is NOT returned', () => pm.expect(json).to.not.have.property('password'));",
+                  "pm.environment.set('newCustomerId', json.customerId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Phạm Thị Dung\",\n  \"telephone\": \"0987654321\",\n  \"email\": \"{{newEmail}}\",\n  \"customerBirthday\": \"2004-03-15\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/register", "host": ["{{gateway}}"], "path": ["api", "customers", "register"] }
+          }
+        },
+        {
+          "name": "2.2 Register – email trùng → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Nguyen Van An\",\n  \"telephone\": \"0987654321\",\n  \"email\": \"an@gmail.com\",\n  \"customerBirthday\": \"2004-03-15\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/register", "host": ["{{gateway}}"], "path": ["api", "customers", "register"] }
+          }
+        },
+        {
+          "name": "2.3 Register – validation nhiều lỗi → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const msg = pm.response.json().message;",
+                  "['customerName', 'telephone', 'email', 'customerBirthday', 'password']",
+                  "    .forEach(f => pm.test(`Message mentions ${f}`, () => pm.expect(msg).to.include(f)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"\",\n  \"telephone\": \"123\",\n  \"email\": \"x\",\n  \"customerBirthday\": \"2099-01-01\",\n  \"password\": \"1\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/register", "host": ["{{gateway}}"], "path": ["api", "customers", "register"] }
+          }
+        },
+        {
+          "name": "2.4 Login customer mới → lưu customer2Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('customer2Token', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "2.5 GET /customers/me (customerToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('email = an@gmail.com', () => pm.expect(pm.response.json().email).to.eql('an@gmail.com'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers/me", "host": ["{{gateway}}"], "path": ["api", "customers", "me"] }
+          }
+        },
+        {
+          "name": "2.6 PUT /customers/me – update profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Profile updated', () => {",
+                  "    pm.expect(json.customerName).to.eql('Nguyễn Văn An (updated)');",
+                  "    pm.expect(json.telephone).to.eql('0905999999');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Nguyễn Văn An (updated)\",\n  \"telephone\": \"0905999999\",\n  \"customerBirthday\": \"2002-05-10\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/me", "host": ["{{gateway}}"], "path": ["api", "customers", "me"] }
+          }
+        },
+        {
+          "name": "2.7 PUT /customers/me/password – sai oldPassword → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customer2Token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"sai\",\n  \"newPassword\": \"654321\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/me/password", "host": ["{{gateway}}"], "path": ["api", "customers", "me", "password"] }
+          }
+        },
+        {
+          "name": "2.8 PUT /customers/me/password – đổi thành công → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customer2Token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"123456\",\n  \"newPassword\": \"654321\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/me/password", "host": ["{{gateway}}"], "path": ["api", "customers", "me", "password"] }
+          }
+        },
+        {
+          "name": "2.9 Login customer2 với pass mới → cập nhật customer2Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('customer2Token', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"654321\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/auth/login", "host": ["{{gateway}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "2.10 GET /customers – Customer → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers", "host": ["{{gateway}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "2.11 GET /customers?keyword=gmail (Admin) → ≥3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const list = pm.response.json();",
+                  "pm.test('At least 3 customers', () => pm.expect(list.length).to.be.at.least(3));",
+                  "pm.test('No password in list', () => list.forEach(c => pm.expect(c).to.not.have.property('password')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/customers?keyword=gmail",
+              "host": ["{{gateway}}"],
+              "path": ["api", "customers"],
+              "query": [{ "key": "keyword", "value": "gmail" }]
+            }
+          }
+        },
+        {
+          "name": "2.12 GET /customers/99999 → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers/99999", "host": ["{{gateway}}"], "path": ["api", "customers", "99999"] }
+          }
+        },
+        {
+          "name": "2.13 POST /customers (Admin create)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('adminEmail2', `staff${Date.now()}@gmail.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('adminCreatedId', pm.response.json().customerId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Khách hàng do Admin tạo\",\n  \"telephone\": \"0911222333\",\n  \"email\": \"{{adminEmail2}}\",\n  \"customerBirthday\": \"1999-09-09\",\n  \"customerStatus\": \"ACTIVE\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers", "host": ["{{gateway}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "2.14 PUT /customers/{{adminCreatedId}} (Admin update)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Name updated', () => pm.expect(pm.response.json().customerName).to.eql('Tên đã được cập nhật'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Tên đã được cập nhật\",\n  \"telephone\": \"0911222333\",\n  \"customerBirthday\": \"1999-09-09\",\n  \"customerStatus\": \"ACTIVE\"\n}"
+            },
+            "url": { "raw": "{{gateway}}/api/customers/{{adminCreatedId}}", "host": ["{{gateway}}"], "path": ["api", "customers", "{{adminCreatedId}}"] }
+          }
+        },
+        {
+          "name": "2.15 DELETE /customers/{{adminCreatedId}} → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers/{{adminCreatedId}}", "host": ["{{gateway}}"], "path": ["api", "customers", "{{adminCreatedId}}"] }
+          }
+        },
+        {
+          "name": "2.16 GET /customers/{{adminCreatedId}} → INACTIVE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Soft deleted -> INACTIVE', () => pm.expect(pm.response.json().customerStatus).to.eql('INACTIVE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers/{{adminCreatedId}}", "host": ["{{gateway}}"], "path": ["api", "customers", "{{adminCreatedId}}"] }
+          }
+        },
+        {
+          "name": "2.17 GET /customers/me (adminToken) → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403 (Admin khong co profile)', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{gateway}}/api/customers/me", "host": ["{{gateway}}"], "path": ["api", "customers", "me"] }
+          }
+        },
+        {
+          "name": "2.18 GET /customers/me – Gateway ghi đè X-User-Id giả",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Gateway overrides spoofed X-User-Id', () => pm.expect(pm.response.json().email).to.eql('an@gmail.com'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "X-User-Id", "value": "2", "description": "Header giả mạo – Gateway phải ghi đè bằng uid trong JWT" }],
+            "url": { "raw": "{{gateway}}/api/customers/me", "host": ["{{gateway}}"], "path": ["api", "customers", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03-Genre-Room",
+      "item": []
+    },
+    {
+      "name": "04-Movie",
+      "item": []
+    },
+    {
+      "name": "05-Showtime",
+      "item": []
+    },
+    {
+      "name": "06-Booking",
+      "item": []
+    },
+    {
+      "name": "07-History-Cancel",
+      "item": []
+    },
+    {
+      "name": "08-Report",
+      "item": []
+    }
+  ]
+}

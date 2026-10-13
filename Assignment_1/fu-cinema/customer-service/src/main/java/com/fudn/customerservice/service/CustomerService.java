@@ -22,16 +22,16 @@ public class CustomerService {
     // ===== F2: Customer profile =====
 
     public CustomerResponse register(RegisterRequest request) {
-        if (customerRepository.existsByEmail(request.email())) {
+        if (customerRepository.existsByEmailIgnoreCase(request.email())) {
             throw new ApiException(HttpStatus.CONFLICT, "Email already in use");
         }
         Customer customer = Customer.builder()
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .fullName(request.fullName())
-                .phone(request.phone())
-                .role("CUSTOMER")
-                .status(CustomerStatus.ACTIVE)
+                .customerName(request.customerName())
+                .telephone(request.telephone())
+                .customerBirthday(request.customerBirthday())
+                .customerStatus(CustomerStatus.ACTIVE)
                 .build();
         return CustomerResponse.from(customerRepository.save(customer));
     }
@@ -42,14 +42,15 @@ public class CustomerService {
 
     public CustomerResponse updateProfile(Long userId, ProfileUpdateRequest request) {
         Customer customer = findById(userId);
-        customer.setFullName(request.fullName());
-        customer.setPhone(request.phone());
+        customer.setCustomerName(request.customerName());
+        customer.setTelephone(request.telephone());
+        if (request.customerBirthday() != null) customer.setCustomerBirthday(request.customerBirthday());
         return CustomerResponse.from(customerRepository.save(customer));
     }
 
     public void changePassword(Long userId, ChangePasswordRequest request) {
         Customer customer = findById(userId);
-        if (!passwordEncoder.matches(request.currentPassword(), customer.getPassword())) {
+        if (!passwordEncoder.matches(request.oldPassword(), customer.getPassword())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
         customer.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -58,37 +59,47 @@ public class CustomerService {
 
     // ===== F3: Admin CRUD =====
 
-    public List<CustomerResponse> getAllCustomers() {
-        return customerRepository.findAll().stream()
-                .map(CustomerResponse::from).toList();
+    public List<CustomerResponse> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return customerRepository.findAll().stream()
+                    .map(CustomerResponse::from).toList();
+        }
+        return customerRepository
+                .findByCustomerNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByCustomerIdAsc(keyword, keyword)
+                .stream().map(CustomerResponse::from).toList();
     }
 
-    public CustomerResponse adminCreate(AdminCustomerRequest request) {
-        if (customerRepository.existsByEmail(request.email())) {
+    public CustomerResponse getById(Long id) {
+        return CustomerResponse.from(findById(id));
+    }
+
+    public CustomerResponse create(AdminCustomerRequest request) {
+        if (customerRepository.existsByEmailIgnoreCase(request.email())) {
             throw new ApiException(HttpStatus.CONFLICT, "Email already in use");
         }
         Customer customer = Customer.builder()
                 .email(request.email())
-                .password(passwordEncoder.encode("changeme"))
-                .fullName(request.fullName())
-                .phone(request.phone())
-                .role("CUSTOMER")
-                .status(request.status() != null ? request.status() : CustomerStatus.ACTIVE)
+                .password(passwordEncoder.encode(request.password() != null ? request.password() : "changeme"))
+                .customerName(request.customerName())
+                .telephone(request.telephone())
+                .customerBirthday(request.customerBirthday())
+                .customerStatus(request.customerStatus() != null ? request.customerStatus() : CustomerStatus.ACTIVE)
                 .build();
         return CustomerResponse.from(customerRepository.save(customer));
     }
 
-    public CustomerResponse adminUpdate(Long id, AdminCustomerRequest request) {
+    public CustomerResponse update(Long id, AdminCustomerRequest request) {
         Customer customer = findById(id);
-        customer.setFullName(request.fullName());
-        customer.setPhone(request.phone());
-        if (request.status() != null) customer.setStatus(request.status());
+        customer.setCustomerName(request.customerName());
+        customer.setTelephone(request.telephone());
+        if (request.customerBirthday() != null) customer.setCustomerBirthday(request.customerBirthday());
+        if (request.customerStatus() != null) customer.setCustomerStatus(request.customerStatus());
         return CustomerResponse.from(customerRepository.save(customer));
     }
 
-    public void adminDelete(Long id) {
+    public void delete(Long id) {
         Customer customer = findById(id);
-        customer.setStatus(CustomerStatus.INACTIVE); // soft delete
+        customer.setCustomerStatus(CustomerStatus.INACTIVE); // soft delete
         customerRepository.save(customer);
     }
 
