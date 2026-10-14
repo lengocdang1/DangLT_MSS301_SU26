@@ -1,0 +1,34 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: customer-service-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**, /api/customers/**, /api/admin/customers/**
+
+        - id: movie-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/genres/**, /api/rooms/**, /api/movies/**, /api/showtimes/**
+
+        - id: booking-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/bookings/**
+
+jwt:
+  secret: fu-cinema-booking-system-secret-key-2026-mss301
+
+services:
+  customer:
+    url: http://localhost:8081
+  movie:
+    url: http://localhost:8082
+  booking:
+    url: http://localhost:8083

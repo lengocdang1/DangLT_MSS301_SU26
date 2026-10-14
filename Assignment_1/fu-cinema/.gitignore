@@ -1,0 +1,27 @@
+# Target & Build directories
+**/target/
+target/
+*.class
+*.jar
+*.war
+
+# Docker binary data & socket files
+docker/
+**/docker/
+**/docker/mongodb/data/
+**/docker/mysql/data/
+*.sock
+
+# IDE / Editor configuration
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
