@@ -5,10 +5,10 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * Request body cho POST /api/payment/charge
+ * TODO-4: Request body cho POST /api/payments/pay
  */
 @Data
-public class ChargeRequest {
+public class PayRequest {
     private String orderId;
     private String customerId;
     private BigDecimal amount;
