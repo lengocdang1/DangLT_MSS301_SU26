@@ -1,20 +1,14 @@
-﻿package com.fudn.paymentservice.controller;
+package com.fudn.paymentservice.controller;
 
-import com.fudn.paymentservice.dto.PayRequest;
-import com.fudn.paymentservice.model.Payment;
-import com.fudn.paymentservice.model.Wallet;
-import com.fudn.paymentservice.repository.WalletRepository;
+import com.fudn.paymentservice.dto.PaymentRequest;
+import com.fudn.paymentservice.model.*;
+import com.fudn.paymentservice.repository.*;
 import com.fudn.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * REST controller cho payment-service.
- * Base path: /api/payments
- */
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
@@ -22,36 +16,26 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final WalletRepository walletRepository;
+    private final PaymentRepository paymentRepository;
 
-    // GET /api/payments/wallets – xem so du vi (tien ich debug/test)
+    @PostMapping("/pay")
+    public Payment pay(@RequestBody PaymentRequest req) {
+        return paymentService.pay(req);
+    }
+
+    @PostMapping("/refund/{orderId}")
+    public String refund(@PathVariable Long orderId) {
+        paymentService.refund(orderId);
+        return "REFUNDED";
+    }
+
     @GetMapping("/wallets")
-    public List<Wallet> getAllWallets() {
+    public List<Wallet> wallets() {
         return walletRepository.findAll();
     }
 
-    /**
-     * TODO-4: POST /api/payments/pay
-     * Body: { orderId, customerId, amount }
-     *
-     * Response:
-     * - 200 OK               – thanh toan thanh cong (hoac idempotent call)
-     * - 404 NOT FOUND        – customerId khong ton tai
-     * - 402 PAYMENT_REQUIRED – so du khong du
-     */
-    @PostMapping("/pay")
-    public ResponseEntity<Payment> pay(@RequestBody PayRequest request) {
-        Payment payment = paymentService.pay(request);
-        return ResponseEntity.ok(payment);
-    }
-
-    /**
-     * TODO-4: POST /api/payments/refund/{orderId}
-     * - 200 OK – hoan tien thanh cong hoac no-op (idempotent)
-     * Goi nhieu lan cung khong cong tien them.
-     */
-    @PostMapping("/refund/{orderId}")
-    public ResponseEntity<Void> refund(@PathVariable String orderId) {
-        paymentService.refund(orderId);
-        return ResponseEntity.ok().build();
+    @GetMapping
+    public List<Payment> payments() {
+        return paymentRepository.findAll();
     }
 }

@@ -1,4 +1,4 @@
-﻿package com.fudn.orderservice.entity;
+package com.fudn.orderservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

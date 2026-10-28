@@ -1,4 +1,4 @@
-﻿package com.fudn.paymentservice;
+package com.fudn.paymentservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

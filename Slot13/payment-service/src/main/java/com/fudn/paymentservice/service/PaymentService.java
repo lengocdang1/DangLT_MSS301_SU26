@@ -1,11 +1,8 @@
-﻿package com.fudn.paymentservice.service;
+package com.fudn.paymentservice.service;
 
-import com.fudn.paymentservice.dto.PayRequest;
-import com.fudn.paymentservice.model.Payment;
-import com.fudn.paymentservice.model.PaymentStatus;
-import com.fudn.paymentservice.model.Wallet;
-import com.fudn.paymentservice.repository.PaymentRepository;
-import com.fudn.paymentservice.repository.WalletRepository;
+import com.fudn.paymentservice.dto.PaymentRequest;
+import com.fudn.paymentservice.model.*;
+import com.fudn.paymentservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,102 +10,56 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
-
-/**
- * TODO-4: PaymentService xu ly pay va refund voi @Transactional (SQL Server).
- */
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
     private final WalletRepository walletRepository;
     private final PaymentRepository paymentRepository;
 
-    // ─────────────────────────────────────────────────────────────
-    // PAY  (POST /api/payments/pay)
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * TODO-4: Tru tien vi cho mot order.
-     * - Idempotent: neu orderId da co payment PAID -> tra ve ngay (khong tru tien lan 2).
-     * - 404 NOT FOUND        : customerId khong ton tai (vi chua duoc tao).
-     * - 402 PAYMENT_REQUIRED : so du khong du.
-     * - 200 OK               : tru tien thanh cong, luu Payment(PAID).
-     */
+    // LOCAL TRANSACTION cua buoc 3: tru tien vi + ghi payment (cung paymentdb tren SQL Server)
     @Transactional
-    public Payment pay(PayRequest req) {
-        // --- Idempotency check ---
-        Optional<Payment> existing = paymentRepository.findByOrderId(req.getOrderId());
-        if (existing.isPresent()) {
-            log.info("Pay idempotent hit for orderId={}", req.getOrderId());
+    public Payment pay(PaymentRequest req) {
+        var existing = paymentRepository.findById(req.orderId());
+        if (existing.isPresent()) {               // idempotent
             return existing.get();
         }
 
-        // --- Tim vi ---
-        Wallet wallet = walletRepository.findById(req.getCustomerId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Khong tim thay vi cua khach hang: " + req.getCustomerId()));
+        Wallet wallet = walletRepository.findById(req.customerId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Khong tim thay vi cua " + req.customerId()));
 
-        // --- Kiem tra so du ---
-        if (wallet.getBalance().compareTo(req.getAmount()) < 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.PAYMENT_REQUIRED,
-                    "So du khong du cho khach hang " + req.getCustomerId()
-                    + ". So du hien tai: " + wallet.getBalance()
-                    + ", Can thanh toan: " + req.getAmount());
+        if (wallet.getBalance() < req.amount()) {
+            throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED,
+                    "So du khong du: con " + wallet.getBalance() + ", can " + req.amount());
         }
 
-        // --- Tru tien ---
-        wallet.setBalance(wallet.getBalance().subtract(req.getAmount()));
-        walletRepository.save(wallet);
+        wallet.setBalance(wallet.getBalance() - req.amount());   // JPA dirty checking tu UPDATE
 
-        // --- Luu Payment(PAID) ---
-        Payment payment = new Payment(null, req.getOrderId(), req.getCustomerId(),
-                req.getAmount(), PaymentStatus.PAID);
-        Payment saved = paymentRepository.save(payment);
-
-        log.info("Paid {} from customer {} for orderId={}", req.getAmount(), req.getCustomerId(), req.getOrderId());
-        return saved;
+        Payment p = new Payment();
+        p.setOrderId(req.orderId());
+        p.setCustomerId(req.customerId());
+        p.setAmount(req.amount());
+        p.setStatus(PaymentStatus.PAID);
+        log.info("PAY order={} customer={} amount={} -> balance con {}",
+                req.orderId(), req.customerId(), req.amount(), wallet.getBalance());
+        return paymentRepository.save(p);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // REFUND  (POST /api/payments/refund/{orderId})
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * TODO-4: Hoan tien (compensation) cho mot order.
-     * - Idempotent: chi hoan tien neu payment dang PAID.
-     * - Neu da REFUNDED hoac chua pay -> khong loi, khong hoan tien them.
-     */
+    // COMPENSATING TRANSACTION cua buoc 3: hoan tien
     @Transactional
-    public void refund(String orderId) {
-        Optional<Payment> optPayment =
-                paymentRepository.findByOrderIdAndStatus(orderId, PaymentStatus.PAID);
-
-        if (optPayment.isEmpty()) {
-            log.info("Refund no-op for orderId={} (not found or already refunded)", orderId);
+    public void refund(Long orderId) {
+        var opt = paymentRepository.findById(orderId);
+        if (opt.isEmpty() || opt.get().getStatus() == PaymentStatus.REFUNDED) {
+            log.info("REFUND order={} -> khong co gi de hoan tac", orderId);
             return;
         }
-
-        Payment payment = optPayment.get();
-
-        // --- Cong lai tien ---
-        Wallet wallet = walletRepository.findById(payment.getCustomerId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Khong tim thay vi khi hoan tien: " + payment.getCustomerId()));
-
-        wallet.setBalance(wallet.getBalance().add(payment.getAmount()));
-        walletRepository.save(wallet);
-
-        // --- Doi trang thai PAID -> REFUNDED ---
-        payment.setStatus(PaymentStatus.REFUNDED);
-        paymentRepository.save(payment);
-
-        log.info("Refunded {} to customer {} for orderId={}",
-                payment.getAmount(), payment.getCustomerId(), orderId);
+        Payment p = opt.get();
+        Wallet wallet = walletRepository.findById(p.getCustomerId()).orElseThrow();
+        wallet.setBalance(wallet.getBalance() + p.getAmount());
+        p.setStatus(PaymentStatus.REFUNDED);
+        log.info("REFUND order={} -> hoan {} cho {}, balance = {}",
+                orderId, p.getAmount(), p.getCustomerId(), wallet.getBalance());
     }
 }

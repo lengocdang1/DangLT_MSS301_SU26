@@ -1,4 +1,4 @@
-﻿package com.fudn.orderservice.config;
+package com.fudn.orderservice.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

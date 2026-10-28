@@ -1,4 +1,4 @@
-﻿package com.fudn.orderservice.repository;
+package com.fudn.orderservice.repository;
 
 import com.fudn.orderservice.entity.SagaLog;
 import org.springframework.data.jpa.repository.JpaRepository;

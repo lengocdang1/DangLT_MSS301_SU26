@@ -13,107 +13,63 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
-
-/**
- * TODO-2: Service xử lý reserve và release với @Transactional (MongoDB replica set).
- */
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InventoryService {
 
     private final ProductRepository productRepository;
     private final ReservationRepository reservationRepository;
 
-    // ─────────────────────────────────────────────────────────────
-    // RESERVE
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Đặt giữ hàng cho một order.
-     * - Idempotent: nếu orderId đã có reservation → trả về ngay (không trừ kho lần 2).
-     * - 404 nếu productId không tồn tại.
-     * - 409 nếu không đủ stock.
-     */
+    // LOCAL TRANSACTION cua buoc 2: tru kho + ghi reservation
+    // (2 collection trong cung inventorydb -> MongoDB multi-document transaction)
     @Transactional
     public Reservation reserve(ReserveRequest req) {
-        // Idempotency check – nếu đã reserve rồi thì trả luôn
-        Optional<Reservation> existing = reservationRepository.findByOrderId(req.getOrderId());
+        // Idempotent: neu orderId nay da duoc reserve roi thi tra lai ket qua cu
+        var existing = reservationRepository.findById(req.orderId());
         if (existing.isPresent()) {
-            log.info("Reserve idempotent hit for orderId={}", req.getOrderId());
+            log.info("Order {} da duoc reserve truoc do -> bo qua", req.orderId());
             return existing.get();
         }
 
-        // Tìm sản phẩm
-        Product product = productRepository.findById(req.getProductId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Product not found: " + req.getProductId()));
+        Product product = productRepository.findById(req.productId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Khong tim thay san pham " + req.productId()));
 
-        // Kiểm tra đủ hàng
-        if (product.getStock() < req.getQuantity()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Insufficient stock for product " + req.getProductId()
-                    + ". Available: " + product.getStock()
-                    + ", Requested: " + req.getQuantity());
+        if (product.getStock() < req.quantity()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Khong du hang: con " + product.getStock() + ", can " + req.quantity());
         }
 
-        // Trừ kho
-        product.setStock(product.getStock() - req.getQuantity());
-        productRepository.save(product);
+        product.setStock(product.getStock() - req.quantity());
+        productRepository.save(product);   // MongoDB KHONG co dirty checking nhu JPA -> phai save
 
-        // Lưu reservation
-        Reservation reservation = new Reservation(
-                null,
-                req.getOrderId(),
-                req.getProductId(),
-                req.getQuantity(),
-                ReservationStatus.RESERVED);
-        Reservation saved = reservationRepository.save(reservation);
-
-        log.info("Reserved {} units of {} for orderId={}", req.getQuantity(), req.getProductId(), req.getOrderId());
-        return saved;
+        Reservation r = new Reservation();
+        r.setOrderId(req.orderId());
+        r.setProductId(req.productId());
+        r.setQuantity(req.quantity());
+        r.setStatus(ReservationStatus.RESERVED);
+        log.info("RESERVE order={} product={} qty={} -> stock con {}",
+                req.orderId(), req.productId(), req.quantity(), product.getStock());
+        return reservationRepository.save(r);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // RELEASE (compensation)
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Hoàn kho (compensation) cho một order.
-     * - Idempotent: chỉ hoàn kho nếu reservation đang ở trạng thái RESERVED.
-     * - Nếu đã RELEASED hoặc chưa reserve → không làm gì, không lỗi.
-     */
+    // COMPENSATING TRANSACTION cua buoc 2: cong lai kho
     @Transactional
-    public void release(String orderId) {
-        // Tìm reservation đang ở trạng thái RESERVED
-        Optional<Reservation> optReservation =
-                reservationRepository.findByOrderIdAndStatus(orderId, ReservationStatus.RESERVED);
-
-        if (optReservation.isEmpty()) {
-            // Idempotent: không có gì để release
-            log.info("Release no-op for orderId={} (not found or already released)", orderId);
+    public void release(Long orderId) {
+        var opt = reservationRepository.findById(orderId);
+        if (opt.isEmpty() || opt.get().getStatus() == ReservationStatus.RELEASED) {
+            // Idempotent: chua reserve hoac da release roi -> khong lam gi
+            log.info("RELEASE order={} -> khong co gi de hoan tac", orderId);
             return;
         }
-
-        Reservation reservation = optReservation.get();
-
-        // Cộng lại kho
-        Product product = productRepository.findById(reservation.getProductId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Product not found during release: " + reservation.getProductId()));
-
-        product.setStock(product.getStock() + reservation.getQuantity());
+        Reservation r = opt.get();
+        Product product = productRepository.findById(r.getProductId()).orElseThrow();
+        product.setStock(product.getStock() + r.getQuantity());
+        r.setStatus(ReservationStatus.RELEASED);
         productRepository.save(product);
-
-        // Đổi trạng thái → RELEASED
-        reservation.setStatus(ReservationStatus.RELEASED);
-        reservationRepository.save(reservation);
-
-        log.info("Released {} units of {} for orderId={}",
-                reservation.getQuantity(), reservation.getProductId(), orderId);
+        reservationRepository.save(r);
+        log.info("RELEASE order={} -> tra lai {} {}, stock = {}",
+                orderId, r.getQuantity(), product.getId(), product.getStock());
     }
 }

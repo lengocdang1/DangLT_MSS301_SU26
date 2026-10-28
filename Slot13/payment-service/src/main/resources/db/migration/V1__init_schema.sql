@@ -1,4 +1,4 @@
-﻿-- V1__init_schema.sql
+-- V1__init_schema.sql
 -- TODO-3: Tao bang wallets va payments cho SQL Server
 
 -- Tao bang wallets neu chua ton tai

@@ -1,36 +1,16 @@
-﻿package com.fudn.paymentservice.model;
+package com.fudn.paymentservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.math.BigDecimal;
-
-/**
- * TODO-3: Entity Payment(orderId, customerId, amount, status)
- */
 @Entity
-@Table(name = "payments")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Payment {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "order_id", nullable = false, unique = true)
-    private String orderId;
-
-    @Column(name = "customer_id", nullable = false)
+    private Long orderId;
     private String customerId;
-
-    @Column(nullable = false)
-    private BigDecimal amount;
+    private double amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentStatus status; // PAID | REFUNDED
+    private PaymentStatus status;
 }

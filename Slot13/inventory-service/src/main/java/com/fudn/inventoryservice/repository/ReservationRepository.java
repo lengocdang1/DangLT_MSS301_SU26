@@ -1,14 +1,9 @@
 package com.fudn.inventoryservice.repository;
 
 import com.fudn.inventoryservice.model.Reservation;
-import com.fudn.inventoryservice.model.ReservationStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-
-public interface ReservationRepository extends MongoRepository<Reservation, String> {
-
-    Optional<Reservation> findByOrderId(String orderId);
-
-    Optional<Reservation> findByOrderIdAndStatus(String orderId, ReservationStatus status);
+@Repository
+public interface ReservationRepository extends MongoRepository<Reservation, Long> {
 }

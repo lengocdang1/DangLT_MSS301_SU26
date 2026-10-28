@@ -1,31 +1,18 @@
 package com.fudn.inventoryservice.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-/**
- * TODO-1: @Document cho MongoDB collection "reservations"
- * Fields: id, orderId (unique index), productId, quantity, status
- */
-@Document(collection = "reservations")
-@Data
+@Document("reservation")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Reservation {
-
     @Id
-    private String id;
-
-    @Indexed(unique = true)
-    private String orderId;
-
+    private Long orderId;          // 1 order = 1 reservation -> dung orderId lam _id
     private String productId;
-
     private int quantity;
-
-    private ReservationStatus status; // RESERVED | RELEASED
+    private ReservationStatus status;   // MongoDB luu enum dang chuoi
 }

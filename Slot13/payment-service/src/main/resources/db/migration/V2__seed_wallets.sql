@@ -1,4 +1,4 @@
-﻿-- V2__seed_wallets.sql
+-- V2__seed_wallets.sql
 -- TODO-3: Nap du lieu mau vi - idempotent (MERGE = INSERT OR UPDATE)
 
 -- Vi C1: so du 5000

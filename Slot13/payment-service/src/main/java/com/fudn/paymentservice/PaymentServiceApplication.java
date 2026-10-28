@@ -1,4 +1,4 @@
-﻿package com.fudn.paymentservice;
+package com.fudn.paymentservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

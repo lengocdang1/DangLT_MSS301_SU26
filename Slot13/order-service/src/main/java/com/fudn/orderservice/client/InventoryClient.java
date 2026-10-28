@@ -1,4 +1,4 @@
-﻿package com.fudn.orderservice.client;
+package com.fudn.orderservice.client;
 
 import com.fudn.orderservice.dto.ReserveRequest;
 import org.springframework.beans.factory.annotation.Qualifier;
