@@ -1,0 +1,13 @@
+# [TODO-2.2: API Gateway routing config]
+# NOTE: Routes và JWT filter được thêm ở Bước 7
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+logging:
+  level:
+    com.mss301.gateway: INFO
+
